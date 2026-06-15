@@ -25,20 +25,20 @@ with col1:
     st.markdown("**🏠 Equipo Local**")
     goles_l = st.number_input("Goles Local Actuales", min_value=0, value=0, step=1, key="l1")
     tiros_l = st.number_input("Tiros al arco Local", min_value=0, value=5, step=1, key="l2")
-    corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3")
+    corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3") # <-- ¡AQUÍ ESTÁ EL DE LOCAL!
     posesion_l = st.number_input("Posesión Local (%)", min_value=0, max_value=100, value=70, step=1, key="l4")
 
 with col2:
     st.markdown("**🚀 Equipo Visitante**")
     goles_v = st.number_input("Goles Visitante Actuales", min_value=0, value=0, step=1, key="v1")
     tiros_v = st.number_input("Tiros al arco Visitante", min_value=0, value=0, step=1, key="v2")
-    corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3")
+    corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3") # <-- ¡AQUÍ ESTÁ EL DE VISITANTE!
     posesion_v = st.number_input("Posesión Visitante (%)", min_value=0, max_value=100, value=30, step=1, key="v4")
 
-# --- NUEVA SECCIÓN: INGRESO DE CUOTAS DE LA CASA DE APUESTAS ---
 st.markdown("---")
 st.subheader("💰 Cuotas de tu Casa de Apuestas (Opcional para buscar Valor)")
-st.caption("Ingresa las cuotas que ofrece tu casa de apuestas en este momento para comparar.")
+st.write("Ingresa las cuotas que ofrece tu casa de apuestas en este momento para comparar.")
+
 col_c1, col_c2, col_c3 = st.columns(3)
 with col_c1:
     cuota_casa_l = st.number_input("Cuota Casa - Local", min_value=1.01, value=1.80, step=0.01)
@@ -111,7 +111,7 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     # --- SECCIÓN VISUAL DE RESULTADOS OPTIMIZADA ---
     st.subheader(f"🔮 Proyección Matemática (Minuto {minuto_actual} al 90)")
-    st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** de partido.")
+    st.info(f"⏳ Faltan jugar **{tiempo_restante} minutes** de partido.")
     
     # Probabilidades 1X2 con Barras de Progreso Visuales
     col_res1, col_res2, col_res3 = st.columns(3)
@@ -127,50 +127,46 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
     
     st.markdown("---")
     
-    # NUEVA SECCIÓN: TABLA COMPARATIVA DE CUOTAS Y VALOR (+EV)
+    # SECCIÓN NUEVA: ANALIZADOR DE VALOR COMPARATIVO DE CUOTAS
     st.subheader("📊 Analizador de Valor en Apuestas (1X2)")
+    st.caption("💡 Tip: Si dice '✅ SÍ (+EV)', significa que la casa paga más de lo que la matemática sugiere. Es una apuesta rentable a largo plazo.")
     
-    # Cálculo de Cuotas Justas (evitando división por cero)
-    cuota_justa_l = 100 / prob_local if prob_local > 0 else 999.0
-    cuota_justa_e = 100 / prob_empate if prob_empate > 0 else 999.0
-    cuota_justa_v = 100 / prob_visitante if prob_visitante > 0 else 999.0
+    cuota_justa_l = 100 / max(0.01, prob_local)
+    cuota_justa_e = 100 / max(0.01, prob_empate)
+    cuota_justa_v = 100 / max(0.01, prob_visitante)
     
-    # Cálculo de Ventaja/Valor: (Cuota Casa / Cuota Justa) - 1
-    valor_l = (cuota_casa_l / cuota_justa_l) - 1
-    valor_e = (cuota_casa_e / cuota_justa_e) - 1
-    valor_v = (cuota_casa_v / cuota_justa_v) - 1
+    ventaja_l = ((cuota_casa_l / cuota_justa_l) - 1) * 100
+    ventaja_e = ((cuota_casa_e / cuota_justa_e) - 1) * 100
+    ventaja_v = ((cuota_casa_v / cuota_justa_v) - 1) * 100
     
-    datos_cuotas = [
+    datos_valor = [
         {
             "Resultado": "🏠 Local",
             "Tu Probabilidad": f"{prob_local:.1f}%",
-            "Tu Cuota Justa": f"{cuota_justa_l:.2f}",
-            "Cuota de tu Casa": f"{cuota_casa_l:.2f}",
-            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_l > 0 else "❌ NO",
-            "Ventaja (%)": f"+{valor_l*100:.1f}%" if valor_l > 0 else f"{valor_l*100:.1f}%"
+            "Tu Cuota Justa": round(cuota_justa_l, 2) if prob_local > 0.1 else 1250.00,
+            "Cuota de tu Casa": cuota_casa_l,
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_l > 0 else "❌ NO",
+            "Ventaja (%)": f"{ventaja_l:+.1f}%"
         },
         {
             "Resultado": "🤝 Empate",
             "Tu Probabilidad": f"{prob_empate:.1f}%",
-            "Tu Cuota Justa": f"{cuota_justa_e:.2f}",
-            "Cuota de tu Casa": f"{cuota_casa_e:.2f}",
-            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_e > 0 else "❌ NO",
-            "Ventaja (%)": f"+{valor_e*100:.1f}%" if valor_e > 0 else f"{valor_e*100:.1f}%"
+            "Tu Cuota Justa": round(cuota_justa_e, 2) if prob_empate > 0.1 else 1250.00,
+            "Cuota de tu Casa": cuota_casa_e,
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_e > 0 else "❌ NO",
+            "Ventaja (%)": f"{ventaja_e:+.1f}%"
         },
         {
             "Resultado": "🚀 Visitante",
             "Tu Probabilidad": f"{prob_visitante:.1f}%",
-            "Tu Cuota Justa": f"{cuota_justa_v:.2f}",
-            "Cuota de tu Casa": f"{cuota_casa_v:.2f}",
-            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_v > 0 else "❌ NO",
-            "Ventaja (%)": f"+{valor_v*100:.1f}%" if valor_v > 0 else f"{valor_v*100:.1f}%"
+            "Tu Cuota Justa": round(cuota_justa_v, 2) if prob_visitante > 0.1 else 1250.00,
+            "Cuota de tu Casa": cuota_casa_v,
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_v > 0 else "❌ NO",
+            "Ventaja (%)": f"{ventaja_v:+.1f}%"
         }
     ]
-    
-    df_cuotas = pd.DataFrame(datos_cuotas)
-    st.dataframe(df_cuotas, use_container_width=True, hide_index=True)
-    st.caption("💡 Tip: Si dice '✅ SÍ (+EV)', significa que la casa paga más de lo que la matemática sugiere. Es una apuesta rentable a largo plazo.")
-    
+    st.dataframe(pd.DataFrame(datos_valor), use_container_width=True, hide_index=True)
+
     st.markdown("---")
     
     # GRÁFICO DE LÍNEA DE TIEMPO EVOLUTIVA
@@ -192,7 +188,7 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     st.markdown("---")
 
-    # MERCADO OVER/UNDER (MÁS/MENOS GOLES)
+    # MERCADO OVER/UNDER (MÁS/MENOS GOLES) Y AMBOS ANOTAN
     st.subheader("📊 Mercados de Goles Totales (Final del Partido)")
     col_ou1, col_ou2 = st.columns(2)
     
@@ -214,3 +210,10 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
         st.write(f"**Sí (GG):** {prob_ambos_anotan:.1f}%")
         st.progress(float(prob_ambos_anotan / 100))
         st.write(f"**No (NG):** {prob_no_anotan:.1f}%")
+        st.progress(float(prob_no_anotan / 100))
+
+    st.markdown("---")
+
+    # ¡NUEVA TARJETA ESTRUCTURADA DE HITOS Y CÓRNERS!
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
