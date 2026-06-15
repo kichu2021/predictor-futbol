@@ -10,8 +10,8 @@ st.set_page_config(page_title="Predicciones de Fútbol Manual Pro", page_icon="�
 if "historial_predicciones" not in st.session_state:
     st.session_state.historial_predicciones = []
 
-st.title("⚽ Predictor Profesional - Modo Manual Pro")
-st.write("Ingresa los datos en vivo. Cada simulación guardará un punto en la línea de tiempo histórica.")
+st.title("⚽ Predictor Profesional + Comparador de Cuotas")
+st.write("Ingresa los datos en vivo para calcular probabilidades, cuotas justas y detectar valor frente a las casas de apuestas.")
 
 st.markdown("---")
 
@@ -34,6 +34,18 @@ with col2:
     tiros_v = st.number_input("Tiros al arco Visitante", min_value=0, value=0, step=1, key="v2")
     corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3")
     posesion_v = st.number_input("Posesión Visitante (%)", min_value=0, max_value=100, value=30, step=1, key="v4")
+
+# --- NUEVA SECCIÓN: INGRESO DE CUOTAS DE LA CASA DE APUESTAS ---
+st.markdown("---")
+st.subheader("💰 Cuotas de tu Casa de Apuestas (Opcional para buscar Valor)")
+st.caption("Ingresa las cuotas que ofrece tu casa de apuestas en este momento para comparar.")
+col_c1, col_c2, col_c3 = st.columns(3)
+with col_c1:
+    cuota_casa_l = st.number_input("Cuota Casa - Local", min_value=1.01, value=1.80, step=0.01)
+with col_c2:
+    cuota_casa_e = st.number_input("Cuota Casa - Empate", min_value=1.01, value=3.40, step=0.01)
+with col_c3:
+    cuota_casa_v = st.number_input("Cuota Casa - Visitante", min_value=1.01, value=4.50, step=0.01)
 
 # Botón para reiniciar la línea de tiempo histórica
 if st.button("🗑️ Reiniciar Línea de Tiempo Histórica", type="secondary"):
@@ -115,7 +127,53 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
     
     st.markdown("---")
     
-    # NUEVA SECCIÓN: GRÁFICO DE LÍNEA DE TIEMPO EVOLUTIVA
+    # NUEVA SECCIÓN: TABLA COMPARATIVA DE CUOTAS Y VALOR (+EV)
+    st.subheader("📊 Analizador de Valor en Apuestas (1X2)")
+    
+    # Cálculo de Cuotas Justas (evitando división por cero)
+    cuota_justa_l = 100 / prob_local if prob_local > 0 else 999.0
+    cuota_justa_e = 100 / prob_empate if prob_empate > 0 else 999.0
+    cuota_justa_v = 100 / prob_visitante if prob_visitante > 0 else 999.0
+    
+    # Cálculo de Ventaja/Valor: (Cuota Casa / Cuota Justa) - 1
+    valor_l = (cuota_casa_l / cuota_justa_l) - 1
+    valor_e = (cuota_casa_e / cuota_justa_e) - 1
+    valor_v = (cuota_casa_v / cuota_justa_v) - 1
+    
+    datos_cuotas = [
+        {
+            "Resultado": "🏠 Local",
+            "Tu Probabilidad": f"{prob_local:.1f}%",
+            "Tu Cuota Justa": f"{cuota_justa_l:.2f}",
+            "Cuota de tu Casa": f"{cuota_casa_l:.2f}",
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_l > 0 else "❌ NO",
+            "Ventaja (%)": f"+{valor_l*100:.1f}%" if valor_l > 0 else f"{valor_l*100:.1f}%"
+        },
+        {
+            "Resultado": "🤝 Empate",
+            "Tu Probabilidad": f"{prob_empate:.1f}%",
+            "Tu Cuota Justa": f"{cuota_justa_e:.2f}",
+            "Cuota de tu Casa": f"{cuota_casa_e:.2f}",
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_e > 0 else "❌ NO",
+            "Ventaja (%)": f"+{valor_e*100:.1f}%" if valor_e > 0 else f"{valor_e*100:.1f}%"
+        },
+        {
+            "Resultado": "🚀 Visitante",
+            "Tu Probabilidad": f"{prob_visitante:.1f}%",
+            "Tu Cuota Justa": f"{cuota_justa_v:.2f}",
+            "Cuota de tu Casa": f"{cuota_casa_v:.2f}",
+            "¿Tiene Valor?": "✅ SÍ (+EV)" if valor_v > 0 else "❌ NO",
+            "Ventaja (%)": f"+{valor_v*100:.1f}%" if valor_v > 0 else f"{valor_v*100:.1f}%"
+        }
+    ]
+    
+    df_cuotas = pd.DataFrame(datos_cuotas)
+    st.dataframe(df_cuotas, use_container_width=True, hide_index=True)
+    st.caption("💡 Tip: Si dice '✅ SÍ (+EV)', significa que la casa paga más de lo que la matemática sugiere. Es una apuesta rentable a largo plazo.")
+    
+    st.markdown("---")
+    
+    # GRÁFICO DE LÍNEA DE TIEMPO EVOLUTIVA
     st.subheader("📈 Evolución de Probabilidades (Línea de Tiempo)")
     if len(st.session_state.historial_predicciones) > 1:
         df_historial = pd.DataFrame(st.session_state.historial_predicciones).sort_values(by="Minuto")
@@ -130,11 +188,11 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
         fig_linea.update_layout(xaxis_range=[0, 90], height=300, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig_linea, use_container_width=True)
     else:
-        st.caption("Inserta cálculos en diferentes minutos (ej. Minuto 15, luego 45, luego 70) para ver la tendencia gráfica aquí.")
+        st.caption("Inserta cálculos en diferentes minutos para ver la tendencia gráfica aquí.")
 
     st.markdown("---")
 
-    # NUEVA SECCIÓN: MERCADO OVER/UNDER (MÁS/MENOS GOLES)
+    # MERCADO OVER/UNDER (MÁS/MENOS GOLES)
     st.subheader("📊 Mercados de Goles Totales (Final del Partido)")
     col_ou1, col_ou2 = st.columns(2)
     
@@ -156,65 +214,3 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
         st.write(f"**Sí (GG):** {prob_ambos_anotan:.1f}%")
         st.progress(float(prob_ambos_anotan / 100))
         st.write(f"**No (NG):** {prob_no_anotan:.1f}%")
-        st.progress(float(prob_no_anotan / 100))
-
-    st.markdown("---")
-
-    # Tarjetas de Hitos Clave (Goles y Córners)
-    col_info1, col_info2 = st.columns(2)
-    with col_info1:
-        st.subheader("⚽ Marcador Esperado")
-        st.markdown(f"### `{goles_finales_l:.1f} - {goles_finales_v:.1f}`")
-        st.caption("Promedio estimado del resultado final con base en el xG proyectado.")
-    with col_info2:
-        st.subheader("🚩 Córners Totales")
-        st.markdown(f"### `{total_corners_partido:.1f}`")
-        st.caption(f"Local: {corners_finales_l:.1f} | Visitante: {corners_finales_v:.1f}")
-
-    st.markdown("---")
-
-    # Gráfico de Marcadores más Probables
-    st.markdown("### 📈 Top Marcadores Finales Más Probables")
-    marcadores = [f"{l}-{v}" for l, v in zip(marcador_final_sim_l, marcador_final_sim_v)]
-    df_marcadores = pd.DataFrame(marcadores, columns=["Marcador"])
-    df_top = df_marcadores["Marcador"].value_counts(normalize=True).head(8).reset_index()
-    df_top.columns = ["Marcador", "Probabilidad"]
-    df_top["Probabilidad"] = df_top["Probabilidad"] * 100
-
-    fig = px.bar(
-        df_top, 
-        x="Marcador", 
-        y="Probabilidad", 
-        text=df_top["Probabilidad"].map("{:.1f}%".format),
-        labels={"Probabilidad": "Probabilidad (%)", "Marcador": "Marcador Final"},
-        color="Probabilidad",
-        color_continuous_scale="Viridis"
-    )
-    fig.update_traces(textposition="outside", marker_line_color="black", marker_line_width=1)
-    fig.update_layout(showlegend=False, yaxis_range=[0, df_top["Probabilidad"].max() + 5], height=320)
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("---")
-
-    # NUEVA SECCIÓN: EXPORTACIÓN DE DATOS SIMULADOS
-    st.subheader("💾 Exportar Simulación de Montecarlo")
-    st.caption("Descarga el desglose matemático completo de las 10,000 iteraciones simuladas por el algoritmo.")
-    
-    df_simulacion_completa = pd.DataFrame({
-        "Simulacion_ID": np.arange(1, n_simulaciones + 1),
-        "Goles_Restantes_Local": goles_restantes_sim_l,
-        "Goles_Restantes_Visitante": goles_restantes_sim_v,
-        "Marcador_Final_Local": marcador_final_sim_l,
-        "Marcador_Final_Visitante": marcador_final_sim_v,
-        "Total_Goles_Partido": totales_goles_sim
-    })
-    
-    csv_data = df_simulacion_completa.to_csv(index=False).encode('utf-8')
-    
-    st.download_button(
-        label="📥 Descargar datos de simulación (.CSV)",
-        data=csv_data,
-        file_name=f"simulacion_partido_minuto_{minuto_actual}.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
