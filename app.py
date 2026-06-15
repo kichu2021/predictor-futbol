@@ -169,7 +169,7 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     st.markdown("---")
     
-    # GRÁFICO DE LÍNEA DE TIEMPO EVOLUTIVA
+    # GRÁFICO DE LÍNEA DE TIEMPO EVOLUTIVA (Aquí reparé lo que se cortó)
     st.subheader("📈 Evolución de Probabilidades (Línea de Tiempo)")
     if len(st.session_state.historial_predicciones) > 1:
         df_historial = pd.DataFrame(st.session_state.historial_predicciones).sort_values(by="Minuto")
@@ -213,9 +213,8 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     st.markdown("---")
 
-    # TARJETA ESTRUCTURADA DE HITOS Y CÓRNERS
+    # TARJETA ESTRUCTURADA DE HITOS Y CÓRNERS (¡Aquí están los resultados de córners!)
     col_info1, col_info2 = st.columns(2)
     with col_info1:
         st.subheader("⚽ Marcador Esperado")
         st.markdown(f"### `{goles_finales_l:.1f} - {goles_finales_v:.1f}`")
-        st.caption("Promedio estimado del resultado final con base en el xG proyectado.")
