@@ -25,14 +25,14 @@ with col1:
     st.markdown("**🏠 Equipo Local**")
     goles_l = st.number_input("Goles Local Actuales", min_value=0, value=0, step=1, key="l1")
     tiros_l = st.number_input("Tiros al arco Local", min_value=0, value=5, step=1, key="l2")
-    corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3") # <-- ¡AQUÍ ESTÁ EL DE LOCAL!
+    corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3")
     posesion_l = st.number_input("Posesión Local (%)", min_value=0, max_value=100, value=70, step=1, key="l4")
 
 with col2:
     st.markdown("**🚀 Equipo Visitante**")
     goles_v = st.number_input("Goles Visitante Actuales", min_value=0, value=0, step=1, key="v1")
     tiros_v = st.number_input("Tiros al arco Visitante", min_value=0, value=0, step=1, key="v2")
-    corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3") # <-- ¡AQUÍ ESTÁ EL DE VISITANTE!
+    corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3")
     posesion_v = st.number_input("Posesión Visitante (%)", min_value=0, max_value=100, value=30, step=1, key="v4")
 
 st.markdown("---")
@@ -111,7 +111,7 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     # --- SECCIÓN VISUAL DE RESULTADOS OPTIMIZADA ---
     st.subheader(f"🔮 Proyección Matemática (Minuto {minuto_actual} al 90)")
-    st.info(f"⏳ Faltan jugar **{tiempo_restante} minutes** de partido.")
+    st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** de partido.")
     
     # Probabilidades 1X2 con Barras de Progreso Visuales
     col_res1, col_res2, col_res3 = st.columns(3)
@@ -127,7 +127,7 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
     
     st.markdown("---")
     
-    # SECCIÓN NUEVA: ANALIZADOR DE VALOR COMPARATIVO DE CUOTAS
+    # SECCIÓN: ANALIZADOR DE VALOR COMPARATIVO DE CUOTAS
     st.subheader("📊 Analizador de Valor en Apuestas (1X2)")
     st.caption("💡 Tip: Si dice '✅ SÍ (+EV)', significa que la casa paga más de lo que la matemática sugiere. Es una apuesta rentable a largo plazo.")
     
@@ -181,7 +181,6 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
             markers=True,
             color_discrete_sequence=["#1f77b4", "#ff7f0e", "#2ca02c"]
         )
-        fig_linea.update_layout(xaxis_range=[0, 90], height=300, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig_linea, use_container_width=True)
     else:
         st.caption("Inserta cálculos en diferentes minutos para ver la tendencia gráfica aquí.")
@@ -214,6 +213,9 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
 
     st.markdown("---")
 
-    # ¡NUEVA TARJETA ESTRUCTURADA DE HITOS Y CÓRNERS!
+    # TARJETA ESTRUCTURADA DE HITOS Y CÓRNERS
     col_info1, col_info2 = st.columns(2)
     with col_info1:
+        st.subheader("⚽ Marcador Esperado")
+        st.markdown(f"### `{goles_finales_l:.1f} - {goles_finales_v:.1f}`")
+        st.caption("Promedio estimado del resultado final con base en el xG proyectado.")
