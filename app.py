@@ -87,13 +87,19 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
     prob_ambos_anotan = (np.sum(ambos_anotan_2t) / n_simulaciones) * 100
     prob_no_anotan = 100.0 - prob_ambos_anotan
     
+    # --- CÁLCULO DE CÓRNERS (SIMULACIÓN ADICIONAL) ---
     corners_minuto_l = ((tiros_l * 0.4) + (corners_l * 0.03)) / minuto_actual
     corners_minuto_v = ((tiros_v * 0.4) + (corners_v * 0.03)) / minuto_actual
     
-    corners_finales_l = corners_l + max(0.5, corners_minuto_l * tiempo_restante)
-    corners_finales_v = corners_v + max(0.5, corners_minuto_v * tiempo_restante)
-    total_corners_partido = corners_finales_l + corners_finales_v
-
+    corners_restantes_esperados_l = max(0.2, corners_minuto_l * tiempo_restante)
+    corners_restantes_esperados_v = max(0.2, corners_minuto_v * tiempo_restante)
+    
+    corners_restantes_sim_l = np.random.poisson(corners_restantes_esperados_l, n_simulaciones)
+    corners_restantes_sim_v = np.random.poisson(corners_restantes_esperados_v, n_simulaciones)
+    
+    totales_corners_sim = corners_l + corners_v + corners_restantes_sim_l + corners_restantes_sim_v
+    corners_finales_l = corners_l + corners_restantes_esperados_l
+    corners_finales_v = corners_v + corners_restantes_esperados_v
     st.subheader(f"🔮 Proyección Matemática (Minuto {minuto_actual} al 90)")
     st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** de partido.")
     
@@ -126,6 +132,60 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
     ]
     st.dataframe(pd.DataFrame(datos_valor), use_container_width=True, hide_index=True)
 
+    # --- HERRAMIENTA DE SELECCIÓN DE APUESTA MÁS ACERTADA ---
+    st.markdown("---")
+    st.subheader("🎯 Recomendador Inteligente: La Apuesta Más Acertada")
+    
+    opciones_apuestas = []
+    
+    # 1. Analizar mercado 1X2 con valor
+    if ventaja_l > 0:
+        opciones_apuestas.append({"Tipo": "1X2 (+EV)", "Pick": "🏠 Gana Local", "Probabilidad": prob_local, "Ventaja": ventaja_l})
+    if ventaja_e > 0:
+        opciones_apuestas.append({"Tipo": "1X2 (+EV)", "Pick": "🤝 Empate", "Probabilidad": prob_empate, "Ventaja": ventaja_e})
+    if ventaja_v > 0:
+        opciones_apuestas.append({"Tipo": "1X2 (+EV)", "Pick": "🚀 Gana Visitante", "Probabilidad": prob_visitante, "Ventaja": ventaja_v})
+        
+    # 2. Analizar líneas de Goles con alta probabilidad (>70%)
+    for linea in [0.5, 1.5, 2.5, 3.5]:
+        p_over = (np.sum(totales_goles_sim > linea) / n_simulaciones) * 100
+        p_under = 100.0 - p_over
+        if p_over >= 70:
+            opciones_apuestas.append({"Tipo": "Goles", "Pick": f"⚽ Más de {linea} Goles", "Probabilidad": p_over, "Ventaja": 0})
+        if p_under >= 70:
+            opciones_apuestas.append({"Tipo": "Goles", "Pick": f"⚽ Menos de {linea} Goles", "Probabilidad": p_under, "Ventaja": 0})
+            
+    # 3. Analizar Ambos Anotan con alta probabilidad
+    if prob_ambos_anotan >= 70:
+        opciones_apuestas.append({"Tipo": "Goles", "Pick": "GG (Ambos Anotan)", "Probabilidad": prob_ambos_anotan, "Ventaja": 0})
+    elif prob_no_anotan >= 70:
+        opciones_apuestas.append({"Tipo": "Goles", "Pick": "NG (Ambos NO Anotan)", "Probabilidad": prob_no_anotan, "Ventaja": 0})
+
+    # 4. Analizar líneas de Córners con alta probabilidad (>70%)
+    for linea_c in [7.5, 8.5, 9.5, 10.5, 11.5]:
+        p_over_c = (np.sum(totales_corners_sim > linea_c) / n_simulaciones) * 100
+        p_under_c = 100.0 - p_over_c
+        if p_over_c >= 70:
+            opciones_apuestas.append({"Tipo": "Córners", "Pick": f"🚩 Más de {linea_c} Córners", "Probabilidad": p_over_c, "Ventaja": 0})
+        if p_under_c >= 70:
+            opciones_apuestas.append({"Tipo": "Córners", "Pick": f"🚩 Menos de {linea_c} Córners", "Probabilidad": p_under_c, "Ventaja": 0})
+
+    # Decidir recomendación
+    if opciones_apuestas:
+        df_opciones = pd.DataFrame(opciones_apuestas)
+        df_con_valor = df_opciones[df_opciones["Ventaja"] > 0]
+        
+        if not df_con_valor.empty:
+            mejor_apuesta = df_con_valor.sort_values(by="Ventaja", ascending=False).iloc[0]
+            st.success(f"**Recomendación Profesional (+EV):** {mejor_apuesta['Pick']} ({mejor_apuesta['Tipo']})")
+            st.write(f"Ofrece una ventaja matemática de **{mejor_apuesta['Ventaja']:.1f}%** frente a la casa con un **{mejor_apuesta['Probabilidad']:.1f}%** de acierto.")
+        else:
+            mejor_apuesta = df_opciones.sort_values(by="Probabilidad", ascending=False).iloc[0]
+            st.warning(f"**Recomendación por Alta Probabilidad:** {mejor_apuesta['Pick']}")
+            st.write(f"No hay valor puro en el mercado 1X2, pero esta opción es estadísticamente segura con un **{mejor_apuesta['Probabilidad']:.1f}%** de probabilidad.")
+    else:
+        st.info("Partido muy cerrado. No hay una recomendación con alta confianza estadística en este minuto.")
+
     st.markdown("---")
     st.subheader("📈 Evolución de Probabilidades (Línea de Tiempo)")
     if len(st.session_state.historial_predicciones) > 1:
@@ -154,22 +214,30 @@ if st.button("📊 Calcular Predicción Completa", use_container_width=True, typ
         st.write(f"**No (NG):** {prob_no_anotan:.1f}%")
         st.progress(float(prob_no_anotan / 100))
 
+    # --- MERCADO DE CÓRNERS COMPLETO ---
+    st.markdown("---")
+    st.subheader("🚩 Mercados de Córners Totales (Proyección Pro)")
+    col_corn1, col_corn2 = st.columns(2)
+    
+    lineas_corners = [7.5, 8.5, 9.5, 10.5, 11.5]
+    datos_ou_c = []
+    for linea_c in lineas_corners:
+        prob_over_c = (np.sum(totales_corners_sim > linea_c) / n_simulaciones) * 100
+        prob_under_c = 100.0 - prob_over_c
+        datos_ou_c.append({"Línea": f"Córners {linea_c}", "Más de (+)": f"{prob_over_c:.1f}%", "Menos de (-)": f"{prob_under_c:.1f}%"})
+        
+    with col_corn1:
+        st.dataframe(pd.DataFrame(datos_ou_c), use_container_width=True, hide_index=True)
+    with col_corn2:
+        st.write(f"**Proyección Córners Local:** {corners_finales_l:.1f}")
+        st.write(f"**Proyección Córners Visitante:** {corners_finales_v:.1f}")
+        st.metric(label="🚩 Total Córners Esperados", value=f"{(corners_finales_l + corners_finales_v):.1f}")
+
     st.markdown("---")
     col_info1, col_info2 = st.columns(2)
     with col_info1:
         st.subheader("⚽ Marcador Esperado")
         st.markdown(f"### `{goles_finales_l:.1f} - {goles_finales_v:.1f}`")
     with col_info2:
-        st.subheader("🚩 Córners Proyectados")
-        st.markdown(f"### `{total_corners_partido:.1f}`")
-        st.caption(f"L: {corners_finales_l:.1f} | V: {corners_finales_v:.1f}")
-
-    st.markdown("---")
-    st.subheader("📈 Top Marcadores Finales")
-    marcadores = [f"{l}-{v}" for l, v in zip(marcador_final_sim_l, marcador_final_sim_v)]
-    df_top = pd.DataFrame(marcadores, columns=["Marcador"])["Marcador"].value_counts(normalize=True).head(8).reset_index()
-    df_top.columns = ["Marcador", "Probabilidad"]
-    df_top["Probabilidad"] = df_top["Probabilidad"] * 100
-
-    fig = px.bar(df_top, x="Marcador", y="Probabilidad", text=df_top["Probabilidad"].map("{:.1f}%".format), color="Probabilidad", color_continuous_scale="Viridis")
-    st.plotly_chart(fig, use_container_width=True)
+        st.subheader("🎯 xG Restante Estimado")
+        st.write(f"Local: **{xg_restante_l:.2f}** | Visitante: **{xg_restante_v:.2f}**")
