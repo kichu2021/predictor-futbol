@@ -3,10 +3,9 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-# Configuración de la página web
+# 1. CONFIGURACIÓN DE LA PÁGINA E HISTORIAL
 st.set_page_config(page_title="Predicciones de Fútbol Manual Pro", page_icon="⚽", layout="centered")
 
-# Inicializar el historial en la sesión para la línea de tiempo
 if "historial_predicciones" not in st.session_state:
     st.session_state.historial_predicciones = []
 
@@ -67,12 +66,15 @@ st.markdown("---")
 if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, type="primary"):
     tiempo_restante = max(1, 90 - minuto_actual)
     
+    # 1. CÁLCULO DE PODER RELATIVO PRE-PARTIDO (Anclaje Estadístico)
     prob_implicita_l = 1 / cuota_ref_l
     prob_implicita_v = 1 / cuota_ref_v
     total_prob = prob_implicita_l + prob_implicita_v + (1 / cuota_ref_e)
+    
     fuerza_teorica_l = max(0.1, min(0.9, prob_implicita_l / total_prob))
     fuerza_teorica_v = max(0.1, min(0.9, prob_implicita_v / total_prob))
     
+    # 2. DINÁMICA DE TIEMPO REAL (Multiplicador de Intensidad)
     if minuto_actual >= 75:
         factor_frenesi = 1.35  
     elif minuto_actual >= 60:
@@ -80,13 +82,14 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     else:
         factor_frenesi = 1.00  
         
-    # PROYECCIÓN DE GOLES CON VARIABLE xG INTEGRADA
+    # 3. PROYECCIÓN DE GOLES CON INTEGRACIÓN DE xG
     volumen_minuto_l = ((tiros_l * 1.0) + (corners_l * 0.5) + (xg_l * 2.5)) / minuto_actual
     volumen_minuto_v = ((tiros_v * 1.0) + (corners_v * 0.5) + (xg_v * 2.5)) / minuto_actual
     
     indice_empuje_l = volumen_minuto_l * (posesion_l / 100)
     indice_empuje_v = volumen_minuto_v * (posesion_v / 100)
     
+    # Factor de Eficiencia (Ajuste por merecimiento estadístico)
     eficiencia_l = (xg_l + 0.1) / (goles_l + 0.1)
     eficiencia_v = (xg_v + 0.1) / (goles_v + 0.1)
     modificador_xg_l = max(0.8, min(1.3, eficiencia_l))
@@ -110,39 +113,12 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
         "Minuto": minuto_actual, "Local (%)": round(prob_local, 1),
         "Empate (%)": round(prob_empate, 1), "Visitante (%)": round(prob_visitante, 1)
     })
-    # 4. PROYECCIÓN DE CÓRNERS 
-    corners_minuto_l = ((tiros_l * 0.4) + (corners_l * 0.03)) / minuto_actual
-    corners_minuto_v = ((tiros_v * 0.4) + (corners_v * 0.03)) / minuto_actual
     
-    corners_restantes_esperados_l = max(0.2, corners_minuto_l * tiempo_restante * factor_frenesi)
-    corners_restantes_esperados_v = max(0.2, corners_minuto_v * tiempo_restante * factor_frenesi)
-    
-    corners_restantes_sim_l = np.random.poisson(corners_restantes_esperados_l, n_simulaciones)
-    corners_restantes_sim_v = np.random.poisson(corners_restantes_esperados_v, n_simulaciones)
-    
-    totales_corners_sim = corners_l + corners_v + corners_restantes_sim_l + corners_restantes_sim_v
-    corners_finales_l = corners_l + corners_restantes_esperados_l
-    corners_finales_v = corners_v + corners_restantes_esperados_v
-
-    # --- RENDERIZADO DE INTERFAZ ---
-    st.subheader(f"🔮 Proyección Avanzada (Minuto {minuto_actual} al 90)")
-    if minuto_actual >= 75:
-        st.error(f"🔥 **¡Frenesí de Cierre Activado!** Faltan {tiempo_restante} minutos (Aceleración del +35%).")
-    else:
-        st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** bajo ritmo regulado.")
-    
-    col_res1, col_res2, col_res3 = st.columns(3)
-    with col_res1:
-        st.metric(label="🏠 Victoria Local", value=f"{prob_local:.1f}%")
-        st.progress(float(prob_local / 100))
-    with col_res2:
-        st.metric(label="🤝 Empate", value=f"{prob_empate:.1f}%")
-        st.progress(float(prob_empate / 100))
-    with col_res3:
-        st.metric(label="🚀 Victoria Visitante", value=f"{prob_visitante:.1f}%")
-        st.progress(float(prob_visitante / 100))
-        
-        # 4. PROYECCIÓN DE CÓRNERS 
+    # Cálculo para Ambos Anotan (Mapeo de la simulación del 2T)
+    ambos_anotan_2t = (goles_restantes_sim_l > 0) & (goles_restantes_sim_v > 0)
+    prob_ambos_anotan = (np.sum(ambos_anotan_2t) / n_simulaciones) * 100
+    prob_no_anotan = 100.0 - prob_ambos_anotan
+    # 4. PROYECCIÓN DE CÓRNERS
     corners_minuto_l = ((tiros_l * 0.4) + (corners_l * 0.03)) / minuto_actual
     corners_minuto_v = ((tiros_v * 0.4) + (corners_v * 0.03)) / minuto_actual
     
@@ -195,6 +171,7 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     with col_corn3:
         corners_totales_esperados = corners_finales_l + corners_finales_v
         st.metric(label="📊 Total Partido", value=f"{corners_totales_esperados:.1f}")
+    # 4. ANALIZADOR DE VALOR EN APUESTAS (1X2)
     st.markdown("---")
     st.subheader("📊 Analizador de Valor en Apuestas (1X2)")
     
@@ -215,6 +192,7 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     df_valor = pd.DataFrame(datos_valor)
     st.dataframe(df_valor, use_container_width=True, hide_index=True)
     
+    # 5. GRÁFICO DE TENDENCIAS EN LA LÍNEA DE TIEMPO
     if len(st.session_state.historial_predicciones) > 1:
         st.markdown("---")
         st.subheader("📈 Evolución de Probabilidades en el Tiempo")
