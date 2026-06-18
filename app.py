@@ -167,4 +167,63 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
         fig = px.line(df_hist, x="Minuto", y=["Local (%)", "Empate (%)", "Visitante (%)"], 
                       title="Tendencia de Probabilidades según avanza el partido",
                       labels={"value": "Probabilidad (%)", "variable": "Mercado"})
+        st.plotly_chart(fig, use_container_width=True)    # 4. PROYECCIÓN DE CÓRNERS 
+    corners_minuto_l = ((tiros_l * 0.4) + (corners_l * 0.03)) / minuto_actual
+    corners_minuto_v = ((tiros_v * 0.4) + (corners_v * 0.03)) / minuto_actual
+    
+    corners_restantes_esperados_l = max(0.2, corners_minuto_l * tiempo_restante * factor_frenesi)
+    corners_restantes_esperados_v = max(0.2, corners_minuto_v * tiempo_restante * factor_frenesi)
+    
+    corners_restantes_sim_l = np.random.poisson(corners_restantes_esperados_l, n_simulaciones)
+    corners_restantes_sim_v = np.random.poisson(corners_restantes_esperados_v, n_simulaciones)
+    
+    totales_corners_sim = corners_l + corners_v + corners_restantes_sim_l + corners_restantes_sim_v
+    corners_finales_l = corners_l + corners_restantes_esperados_l
+    corners_finales_v = corners_v + corners_restantes_esperados_v
+
+    # --- RENDERIZADO DE INTERFAZ ---
+    st.subheader(f"🔮 Proyección Avanzada (Minuto {minuto_actual} al 90)")
+    if minuto_actual >= 75:
+        st.error(f"🔥 **¡Frenesí de Cierre Activado!** Faltan {tiempo_restante} minutos (Aceleración del +35%).")
+    else:
+        st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** bajo ritmo regulado.")
+    
+    col_res1, col_res2, col_res3 = st.columns(3)
+    with col_res1:
+        st.metric(label="🏠 Victoria Local", value=f"{prob_local:.1f}%")
+        st.progress(float(prob_local / 100))
+    with col_res2:
+        st.metric(label="🤝 Empate", value=f"{prob_empate:.1f}%")
+        st.progress(float(prob_empate / 100))
+    with col_res3:
+        st.metric(label="🚀 Victoria Visitante", value=f"{prob_visitante:.1f}%")
+        st.progress(float(prob_visitante / 100))
+    st.markdown("---")
+    st.subheader("📊 Analizador de Valor en Apuestas (1X2)")
+    
+    cuota_justa_l = 100 / max(0.01, prob_local)
+    cuota_justa_e = 100 / max(0.01, prob_empate)
+    cuota_justa_v = 100 / max(0.01, prob_visitante)
+    
+    ventaja_l = ((cuota_casa_l / cuota_justa_l) - 1) * 100
+    ventaja_e = ((cuota_casa_e / cuota_justa_e) - 1) * 100
+    ventaja_v = ((cuota_casa_v / cuota_justa_v) - 1) * 100
+    
+    datos_valor = [
+        {"Resultado": "🏠 Local", "Tu Probabilidad": f"{prob_local:.1f}%", "Tu Cuota Justa": round(cuota_justa_l, 2) if prob_local > 0.1 else 1250.00, "Cuota de tu Casa": cuota_casa_l, "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_l > 0 else "❌ NO", "Ventaja (%)": f"{ventaja_l:+.1f}%"},
+        {"Resultado": "🤝 Empate", "Tu Probabilidad": f"{prob_empate:.1f}%", "Tu Cuota Justa": round(cuota_justa_e, 2) if prob_empate > 0.1 else 1250.00, "Cuota de tu Casa": cuota_casa_e, "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_e > 0 else "❌ NO", "Ventaja (%)": f"{ventaja_e:+.1f}%"},
+        {"Resultado": "🚀 Visitante", "Tu Probabilidad": f"{prob_visitante:.1f}%", "Tu Cuota Justa": round(cuota_justa_v, 2) if prob_visitante > 0.1 else 1250.00, "Cuota de tu Casa": cuota_casa_v, "¿Tiene Valor?": "✅ SÍ (+EV)" if ventaja_v > 0 else "❌ NO", "Ventaja (%)": f"{ventaja_v:+.1f}%"},
+    ]
+    
+    df_valor = pd.DataFrame(datos_valor)
+    st.dataframe(df_valor, use_container_width=True, hide_index=True)
+    
+    if len(st.session_state.historial_predicciones) > 1:
+        st.markdown("---")
+        st.subheader("📈 Evolución de Probabilidades en el Tiempo")
+        df_hist = pd.DataFrame(st.session_state.historial_predicciones)
+        fig = px.line(df_hist, x="Minuto", y=["Local (%)", "Empate (%)", "Visitante (%)"], 
+                      title="Tendencia de Probabilidades según avanza el partido",
+                      labels={"value": "Probabilidad (%)", "variable": "Mercado"})
         st.plotly_chart(fig, use_container_width=True)
+
