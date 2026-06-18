@@ -170,3 +170,48 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
                       title="Tendencia de Probabilidades según avanza el partido",
                       labels={"value": "Probabilidad (%)", "variable": "Mercado"})
         st.plotly_chart(fig, use_container_width=True)
+            # 4. PROYECCIÓN DE CÓRNERS 
+    corners_minuto_l = ((tiros_l * 0.4) + (corners_l * 0.03)) / minuto_actual
+    corners_minuto_v = ((tiros_v * 0.4) + (corners_v * 0.03)) / minuto_actual
+    
+    corners_restantes_esperados_l = max(0.2, corners_minuto_l * tiempo_restante * factor_frenesi)
+    corners_restantes_esperados_v = max(0.2, corners_minuto_v * tiempo_restante * factor_frenesi)
+    
+    corners_restantes_sim_l = np.random.poisson(corners_restantes_esperados_l, n_simulaciones)
+    corners_restantes_sim_v = np.random.poisson(corners_restantes_esperados_v, n_simulaciones)
+    
+    totales_corners_sim = corners_l + corners_v + corners_restantes_sim_l + corners_restantes_sim_v
+    corners_finales_l = corners_l + corners_restantes_esperados_l
+    corners_finales_v = corners_v + corners_restantes_esperados_v
+
+    # --- RENDERIZADO DE INTERFAZ ---
+    st.subheader(f"🔮 Proyección Avanzada (Minuto {minuto_actual} al 90)")
+    if minuto_actual >= 75:
+        st.error(f"🔥 **¡Frenesí de Cierre Activado!** Faltan {tiempo_restante} minutos (Aceleración del +35%).")
+    else:
+        st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** bajo ritmo regulado.")
+    
+    # Muestra de probabilidades 1X2
+    col_res1, col_res2, col_res3 = st.columns(3)
+    with col_res1:
+        st.metric(label="🏠 Victoria Local", value=f"{prob_local:.1f}%")
+        st.progress(float(prob_local / 100))
+    with col_res2:
+        st.metric(label="🤝 Empate", value=f"{prob_empate:.1f}%")
+        st.progress(float(prob_empate / 100))
+    with col_res3:
+        st.metric(label="🚀 Victoria Visitante", value=f"{prob_visitante:.1f}%")
+        st.progress(float(prob_visitante / 100))
+        
+    # 🔥 BLOQUE AGREGADO: Visualización de Córners Proyectados
+    st.markdown("---")
+    st.subheader("📐 Proyección Total de Córners")
+    col_corn1, col_corn2, col_corn3 = st.columns(3)
+    with col_corn1:
+        st.metric(label="🚩 Córners Finales Local", value=f"{corners_finales_l:.1f}")
+    with col_corn2:
+        st.metric(label="🚩 Córners Finales Visitante", value=f"{corners_finales_v:.1f}")
+    with col_corn3:
+        corners_totales_esperados = corners_finales_l + corners_finales_v
+        st.metric(label="📊 Total Partido", value=f"{corners_totales_esperados:.1f}")
+
