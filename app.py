@@ -38,6 +38,7 @@ with col1:
     tiros_l = st.number_input("Tiros al arco Local", min_value=0, value=5, step=1, key="l2")
     corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3")
     posesion_l = st.number_input("Posesión Local (%)", min_value=0, max_value=100, value=70, step=1, key="l4")
+    promedio_torneo = st.number_input("📈 Promedio Goles del Torneo (Global)", min_value=0.50, value=2.70, step=0.05, key="prom_torneo")
 
 with col2:
     st.markdown("**🚀 Equipo Visitante**")
@@ -95,9 +96,12 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     modificador_xg_l = max(0.8, min(1.3, eficiencia_l))
     modificador_xg_v = max(0.8, min(1.3, eficiencia_v))
     
-    xg_restante_l = max(((indice_empuje_l * 0.7) + (fuerza_teorica_l * 0.3)) * 0.18 * tiempo_restante * factor_frenesi * modificador_xg_l, 0.05)
-    xg_restante_v = max(((indice_empuje_v * 0.7) + (fuerza_teorica_v * 0.3)) * 0.18 * tiempo_restante * factor_frenesi * modificador_xg_v, 0.05)
-    
+        base_minuto_torneo = promedio_torneo / 90.0
+    impulso_estabilizado_l = (indice_empuje_l * 0.70) + (fuerza_teorica_l * 0.15) + (base_minuto_torneo * 0.15)
+    impulso_estabilizado_v = (indice_empuje_v * 0.70) + (fuerza_teorica_v * 0.15) + (base_minuto_torneo * 0.15)
+    xg_restante_l = max(impulso_estabilizado_l * 0.18 * tiempo_restante * factor_frenesi * modificador_xg_l, 0.05)
+    xg_restante_v = max(impulso_estabilizado_v * 0.18 * tiempo_restante * factor_frenesi * modificador_xg_v, 0.05)
+
     n_simulaciones = 10000
     goles_restantes_sim_l = np.random.poisson(xg_restante_l, n_simulaciones)
     goles_restantes_sim_v = np.random.poisson(xg_restante_v, n_simulaciones)
