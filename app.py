@@ -96,7 +96,7 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     modificador_xg_l = max(0.8, min(1.3, eficiencia_l))
     modificador_xg_v = max(0.8, min(1.3, eficiencia_v))
     
-        base_minuto_torneo = promedio_torneo / 90.0
+    base_minuto_torneo = promedio_torneo / 90.0
     impulso_estabilizado_l = (indice_empuje_l * 0.70) + (fuerza_teorica_l * 0.15) + (base_minuto_torneo * 0.15)
     impulso_estabilizado_v = (indice_empuje_v * 0.70) + (fuerza_teorica_v * 0.15) + (base_minuto_torneo * 0.15)
     xg_restante_l = max(impulso_estabilizado_l * 0.18 * tiempo_restante * factor_frenesi * modificador_xg_l, 0.05)
