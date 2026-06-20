@@ -38,6 +38,7 @@ with col1:
     tiros_l = st.number_input("Tiros al arco Local", min_value=0, value=5, step=1, key="l2")
     corners_l = st.number_input("Córners Local Totales", min_value=0, value=4, step=1, key="l3")
     posesion_l = st.number_input("Posesión Local (%)", min_value=0, max_value=100, value=70, step=1, key="l4")
+    rojas_l = st.number_input("🔴 Tarjetas Rojas Local", min_value=0, max_value=4, value=0, step=1, key="l_rojas") # <-- NUEVO
     promedio_torneo = st.number_input("📈 Promedio Goles del Torneo (Global)", min_value=0.50, value=2.70, step=0.05, key="prom_torneo")
 
 with col2:
@@ -47,8 +48,8 @@ with col2:
     tiros_v = st.number_input("Tiros al arco Visitante", min_value=0, value=0, step=1, key="v2")
     corners_v = st.number_input("Córners Visitante Totales", min_value=0, value=0, step=1, key="v3")
     posesion_v = st.number_input("Posesión Visitante (%)", min_value=0, max_value=100, value=30, step=1, key="v4")
-st.markdown("---")
-st.subheader("💰 3. Cuotas Actuales en Vivo (Para buscar Valor)")
+    rojas_v = st.number_input("🔴 Tarjetas Rojas Visitante", min_value=0, max_value=4, value=0, step=1, key="v_rojas") # <-- NUEVO
+
 
 col_c1, col_c2, col_c3 = st.columns(3)
 with col_c1:
