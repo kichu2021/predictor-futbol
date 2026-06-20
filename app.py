@@ -143,7 +143,7 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
     else:
         st.info(f"⏳ Faltan jugar **{tiempo_restante} minutos** bajo ritmo regulado.")
     
-    # 1. GANADOR DEL PARTIDO (1X2)
+        # 1. GANADOR DEL PARTIDO (1X2)
     col_res1, col_res2, col_res3 = st.columns(3)
     with col_res1:
         st.metric(label="🏠 Victoria Local", value=f"{prob_local:.1f}%")
@@ -155,15 +155,40 @@ if st.button("📊 Calcular Predicción Avanzada", use_container_width=True, typ
         st.metric(label="🚀 Victoria Visitante", value=f"{prob_visitante:.1f}%")
         st.progress(float(prob_visitante / 100))
         
+    # --- 🟢 NUEVA INSERCIÓN: GOLES PROBABLES (MARCADOR EXACTO MÁS FRECUENTE) ---
+    st.markdown("---")
+    st.subheader("🎯 Pronóstico de Marcador Final")
+    
+    # Calculamos el valor que más veces ocurrió en tus simulación de Montecarlo (la moda)
+    goles_prob_l = int(pd.Series(marcador_final_sim_l).mode().iloc[0])
+    goles_prob_v = int(pd.Series(marcador_final_sim_v).mode().iloc[0])
+    
+    # Renderizado estético del marcador estimado
+    st.markdown(
+        f"""
+        <div style="text-align: center; background-color: #1E293B; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #94A3B8; font-size: 14px; font-weight: bold; text-transform: uppercase;">Marcador Final Más Probable</p>
+            <h1 style="margin: 5px 0 0 0; color: #F8FAFC; font-size: 48px; letter-spacing: 5px;">
+                {goles_prob_l} <span style="color: #38BDF8;">-</span> {goles_prob_v}
+            </h1>
+            <p style="margin: 5px 0 0 0; color: #38BDF8; font-size: 13px;">Basado en el promedio de 10k simulaciones en vivo</p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+    # -------------------------------------------------------------------------
+        
     # 2. MERCADO DE GOLES EN EL 2T (Ambos Anotan)
     st.markdown("---")
     st.subheader("⚽ Ambos Equipos Anotan en el 2do Tiempo")
     col_g1, col_g2 = st.columns(2)
     with col_g1:
-        st.metric(label="✅ SÍ Anotan Ambos", value=f"{prob_ambos_anotan:.1f}%")
+        st.metric(label="✅ Sí Anotan Ambos", value=f"{prob_ambos_anotan:.1f}%")
+        st.progress(float(prob_ambos_anotan / 100))
     with col_g2:
-        st.metric(label="❌ NO Anotan Ambos", value=f"{prob_no_anotan:.1f}%")
-        
+        st.metric(label="❌ No Anotan Ambos", value=f"{prob_no_anotan:.1f}%")
+        st.progress(float(prob_no_anotan / 100))
+
     # 3. MERCADO DE CÓRNERS PROYECTADOS
     st.markdown("---")
     st.subheader("📐 Proyección Total de Córners")
